@@ -1,0 +1,4 @@
+include ':HTTPServiceKt'
+include ':HTTPServiceKtSample'
+
+rootProject.name = "HTTPServiceKt"
