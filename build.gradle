@@ -1,0 +1,50 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext.versions = [
+        'minSdk': 21,
+        'compileSdk': 29,
+        'targetSdk': 29,
+        'buildTools': '29.0.3',
+
+        'kotlin': '1.4.10',
+        'androidPlugin': '4.0.2'
+    ]
+
+    ext.deps = [
+        'androidPlugin': "com.android.tools.build:gradle:${versions.androidPlugin}",
+        'kotlin': [
+            'plugin': "org.jetbrains.kotlin:kotlin-gradle-plugin:${versions.kotlin}",
+            'stdlib': "org.jetbrains.kotlin:kotlin-stdlib:${versions.kotlin}"
+        ],
+        junit: 'junit:junit:4.12'
+    ]
+
+    repositories {
+        google()
+        jcenter()
+        maven { url "https://jitpack.io" }
+    }
+    dependencies {
+        classpath deps.androidPlugin
+        classpath deps.kotlin.plugin
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+group 'com.inmotionsoftware'
+version '1.0-SNAPSHOT'
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven { url "https://jitpack.io" }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
