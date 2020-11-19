@@ -15,8 +15,7 @@ dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
     api deps.kotlin.stdlib
 
-    implementation "com.github.inmotionsoftware:promisekt:1.0.0"
-    implementation "com.github.inmotionsoftware:kotlin-log:1.4.0"
+    api "com.github.inmotionsoftware:promisekt:1.0.0"
 
     // 3rd-Party dependencies
     api 'com.squareup.moshi:moshi-kotlin:1.8.0'
