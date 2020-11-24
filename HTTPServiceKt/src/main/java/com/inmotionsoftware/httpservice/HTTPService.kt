@@ -39,6 +39,43 @@ typealias DecoderRegistry = Map<String, Decoder>
 typealias EncoderRegistry = Map<String, Encoder>
 typealias TimeInterval = Long
 
+interface HTTPServiceLogger {
+    fun log(level: HTTPService.LogLevel, message: String, metadata: Map<String, String>? = null)
+}
+
+fun HTTPServiceLogger.debug(message: String, metadata: Map<String, String>? = null) {
+    this.log(HTTPService.LogLevel.Debug, message, metadata)
+}
+
+fun HTTPServiceLogger.error(error: Throwable, metadata: Map<String, String>? = null) {
+    this.log(HTTPService.LogLevel.Error, error.stackTraceToString(), metadata)
+}
+
+object HTTPServiceConsoleLogger: HTTPServiceLogger {
+    private const val TAG = "HTTPServiceKt"
+
+    override fun log(level: HTTPService.LogLevel, message: String, metadata: Map<String, String>?) {
+        val msg: String = {
+            if (metadata == null)
+                message
+            else {
+                val metadataStr = metadata.entries.joinToString(separator = " "){ "${it.key} = ${it.value}"}
+                "${message}\n${metadataStr}"
+            }
+        }()
+
+        when (level) {
+            HTTPService.LogLevel.Trace -> Log.v(TAG, msg)
+            HTTPService.LogLevel.Debug -> Log.d(TAG, msg)
+            HTTPService.LogLevel.Info -> Log.i(TAG, msg)
+            HTTPService.LogLevel.Notice -> Log.i(TAG, msg)
+            HTTPService.LogLevel.Warning -> Log.w(TAG, msg)
+            HTTPService.LogLevel.Error -> Log.e(TAG, message)
+            HTTPService.LogLevel.Critical -> Log.e(TAG, message)
+        }
+    }
+}
+
 open class HTTPService(val config: HTTPService.Config) {
 
     sealed class Error : Throwable {
@@ -256,6 +293,16 @@ open class HTTPService(val config: HTTPService.Config) {
         , Connect(value = "CONNECT")
     }
 
+    enum class LogLevel {
+        Trace,
+        Debug,
+        Info,
+        Notice,
+        Warning,
+        Error,
+        Critical
+    }
+
     data class Config(
         var baseUrl: URL?
         , var headers: Headers = emptyMap()
@@ -269,7 +316,8 @@ open class HTTPService(val config: HTTPService.Config) {
         , var encoders: EncoderRegistry = mapOf(
             "application/json" to JSONEncoder()
         )
-        ,  var cacheStore: CacheStore? = null
+        , var cacheStore: CacheStore? = null
+        , var logger: HTTPServiceLogger? = HTTPServiceConsoleLogger
     )
 
     sealed class UploadBody<T:Any> {
@@ -398,7 +446,7 @@ open class HTTPService(val config: HTTPService.Config) {
 
             if (config.enableHttpLogging) {
                 val logger = HttpLoggingInterceptor(HttpLoggingInterceptor.Logger {
-                    Log.d("HttpService", it)
+                    config.logger?.debug(it)
                 })
                 logger.level = HttpLoggingInterceptor.Level.BODY
                 builder.addInterceptor(logger)
@@ -445,7 +493,7 @@ open class HTTPService(val config: HTTPService.Config) {
         return this.request(request = request)
     }
 
-    internal fun download(method: Method, url: HttpUrl): Promise<Result?> {
+    private fun download(method: Method, url: HttpUrl): Promise<Result?> {
         val request = Request.Builder()
                 .url(url)
                 .method(method.value, null)
@@ -507,6 +555,10 @@ open class HTTPService(val config: HTTPService.Config) {
                     if (it == null) throw error
                     return@map Result(mimeType = it.mimeType, body = it.body)
                 }
+            }
+            .recover { error ->
+                this.config.logger?.error(error)
+                throw error
             }
     }
 
