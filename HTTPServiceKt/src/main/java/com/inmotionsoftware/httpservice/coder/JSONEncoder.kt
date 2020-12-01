@@ -23,7 +23,7 @@ open class JSONEncoder(private val adapters: Array<JSONAdapter>? = null) : Encod
         val builder = Moshi.Builder()
         builder.add(KotlinJsonAdapterFactory())
                 .add(Date::class.java, Rfc3339DateJsonAdapter().nullSafe())
-                .add(UUID::class.java, UUIDJsonAdapter())
+                .add(UUIDJsonAdapter())
         this.adapters?.forEach { builder.add(it) }
         this.moshi = builder.build()
     }
